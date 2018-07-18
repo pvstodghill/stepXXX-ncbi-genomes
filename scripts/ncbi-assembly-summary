@@ -1,0 +1,33 @@
+#! /bin/bash
+
+function usage {
+    echo 1>&2 "Usage: $0 [options] > summary.txt"
+    echo 1>&2 "-g - Genbank"
+    echo 1>&2 "-h - this message"
+    echo 1>&2 "-r - RefSeq (default)"
+    exit "$@"
+}    
+
+while getopts 'ghr' opt ; do
+    case "$opt" in
+	g) opt_g=1 ;;
+	h) opt_h=1 ;;
+	r) opt_r=1 ;;
+	\?) usage 1 ;;
+	*) echo "Can't happen" ; exit 1 ;;
+    esac
+done
+shift $((OPTIND-1))
+
+if [ "$opt_h" ] ; then
+    usage
+fi
+
+if [ -z "$opt_g" ] ; then
+    curl -s ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
+elif [ -z "$opt_r" ] ; then
+    curl -s ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/bacteria/assembly_summary.txt
+else
+    curl -s ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
+    curl -s ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/bacteria/assembly_summary.txt | tail -n +2
+fi
