@@ -113,6 +113,55 @@ function download_genomes {
 
 # ------------------------------------------------------------------------
 
+function ensure_taxdump {
+    if [ -f temp/taxdump/nodes.dmp ] ; then return ; fi
+    wget -q -Otemp/taxdump.tar.gz ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+    mkdir temp/taxdumpmkdir temp/taxdump
+    tar -C temp/taxdump -z -x -f temp/taxdump.tar.gz
+}
+
+# accessions_by_taxon_id (genbank|refseq) TAXID
+function accessions_by_taxon_id {
+    ensure_repo_summary refseq
+    ensure_taxdump
+    cat temp/$1.txt \
+	| ./scripts/ncbi-assembly-taxon -n temp/taxdump/nodes.dmp $2 \
+	| ./scripts/ncbi-assembly-cut -H -A
+}
+
+# complete_accessions_by_taxon_id (genbank|refseq) TAXID
+function complete_accessions_by_taxon_id {
+    ensure_repo_summary refseq
+    ensure_taxdump
+    cat temp/$1.txt \
+	| ./scripts/ncbi-assembly-taxon -n temp/taxdump/nodes.dmp $2 \
+	| ./scripts/ncbi-assembly-just -c \
+	| ./scripts/ncbi-assembly-cut -H -A
+}
+
+
+# download_accessions_by_taxon_id (genbank|refseq) TAXID
+function download_accessions_by_taxon_id {
+    for accession in $(accessions_by_taxon_id "$@") ; do
+	download_genomes -d $accession $accession
+    done
+}
+
+# download_complete_accessions_by_taxon_id (genbank|refseq) TAXID
+function download_complete_accessions_by_taxon_id {
+    for accession in $(complete_accessions_by_taxon_id "$@") ; do
+	download_genomes -d $accession $accession
+    done
+}
+
+# ------------------------------------------------------------------------
+
+function rename_accession_dirs {
+    ls -d results/GC?_* | ./scripts/ncbi-assembly-rename-dirs  temp/refseq.txt | bash -x
+}
+
+# ------------------------------------------------------------------------
+
 . "$CONFIG_SCRIPT"
 
 # ------------------------------------------------------------------------

@@ -1,0 +1,84 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+use Carp::Always;
+
+use constant { TRUE => 1, FALSE => 0 };
+
+use File::Basename;
+use Getopt::Std;
+
+our $opt_A;
+our $opt_H;
+our $opt_a;
+our $opt_f;
+our $opt_h;
+our $opt_l;
+our $opt_n;
+our $opt_s;
+
+
+sub usage {
+  my $progname = basename($0);
+  print STDERR "Usage: $progname [options] ...\n";
+  print STDERR "-A - accession\n";
+  print STDERR "-H - suppress header\n";
+  print STDERR "-a - all fields\n";
+  print STDERR "-f - ftp path\n";
+  print STDERR "-h - print help\n";
+  print STDERR "-l - assembly level\n";
+  print STDERR "-n - name fields\n";
+  print STDERR "-s - submitter\n";
+  exit(@_);
+}
+
+my $stat = getopts('AHafhlns');
+if (!$stat) {
+  usage(1);
+}
+if ($opt_h) {
+  usage();
+}
+
+
+while (<STDIN>) {
+  chomp;
+  my $is_header = FALSE;
+  if ( /^#/ ) {
+    s/^# *//;
+    if ( $opt_H ) { next; }
+    $is_header = TRUE;
+  }
+  my ($assembly_accession,$bioproject,$biosample,$wgs_master,
+      $refseq_category,$taxid,$species_taxid,$organism_name,$infraspecific_name,
+      $isolate,$version_status,$assembly_level,$release_type,$genome_rep,
+      $seq_rel_date,$asm_name,$submitter,$gbrs_paired_asm,$paired_asm_comp,
+      $ftp_path) = split(/\t/);
+  my @l;
+  push @l, $assembly_accession if ($opt_a || $opt_A);
+  push @l, $bioproject if ($opt_a);
+  push @l, $biosample if ($opt_a);
+  push @l, $wgs_master if ($opt_a);
+  push @l, $refseq_category if ($opt_a);
+  push @l, $taxid if ($opt_a);
+  push @l, $species_taxid if ($opt_a);
+  push @l, $organism_name if ($opt_a || $opt_n);
+  push @l, $infraspecific_name if ($opt_a || $opt_n);
+  push @l, $isolate if ($opt_a || $opt_n);
+  push @l, $version_status if ($opt_a);
+  push @l, $assembly_level if ($opt_a || $opt_l);
+  push @l, $release_type if ($opt_a);
+  push @l, $genome_rep if ($opt_a);
+  push @l, $seq_rel_date if ($opt_a);
+  push @l, $asm_name if ($opt_a);
+  push @l, $submitter if ($opt_a || $opt_s);
+  push @l, $gbrs_paired_asm if ($opt_a);
+  push @l, $paired_asm_comp if ($opt_a);
+  push @l, $ftp_path if ($opt_a || $opt_f);
+  my $s = join("\t",@l);
+  if ($is_header) {
+    $s = "# ".$s;
+  }
+  print "$s\n";
+}
